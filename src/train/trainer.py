@@ -4,10 +4,11 @@ import pickle
 from dataclasses import dataclass, field
 from typing import List
 from stable_baselines3 import PPO, SAC, TD3
-from sb3_contrib import RecurrentPPO
+# from sb3_contrib import RecurrentPPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import VecNormalize
 from models.ppo.ppo_tensor import PPOTensor
+from models.ppo.ppo_recurrent import RecurrentPPO  # RecurrentPPO has incorrect time, fps
 from itertools import cycle
 from pink import PinkNoiseDist
 

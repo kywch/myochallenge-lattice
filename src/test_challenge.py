@@ -23,15 +23,21 @@ parser.add_argument("--log_std_init", type=float, default=0.0, help="Initial log
 
 parser.add_argument("--env_name",type=str,default="MyoElbowPoseRandom", help="Name of the environment",)
 
+#parser.add_argument("--track", default=False, help="Track on WandB")
+parser.add_argument("--track", action="store_true", help="Track on WandB")
+parser.add_argument("--wandb_project", type=str, default="myo-lattice", help="WandB project name")
+parser.add_argument("--wandb_group", type=str, default=None, help="WandB project group")
+
 parser.add_argument("--load_path", type=str, help="Path to the experiment to load")
 parser.add_argument("--checkpoint_num", type=int, default=None, help="Number of the checkpoint to load")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of parallel environments")
 parser.add_argument("--device", type=str, default="cuda", help="Device, cuda or cpu")
 parser.add_argument("--std_reg", type=float, default=0, help="Additional independent std for the multivariate gaussian (only for lattice)")
-parser.add_argument("--num_steps", type=int, default=1_000_000_000,  help="Number of training steps once an environment is sampled")
-parser.add_argument("--save_every", type=int, default=500_000, help="Save a checkpoint every N number of steps")
+parser.add_argument("--num_steps", type=int, default=10_000_000,  help="Number of training steps once an environment is sampled")
+parser.add_argument("--save_every", type=int, default=1_000_000, help="Save a checkpoint every N number of steps")
 parser.add_argument("--batch_size", type=int, default=2048, help="Size of the minibatch")
 parser.add_argument("--steps_per_env", type=int, default=512, help="Steps per environment")
+
 parser.add_argument("--done_weight", type=float, default=0)
 parser.add_argument("--act_reg_weight", type=float, default=0)
 parser.add_argument("--lose_weight", type=float, default=0)
@@ -92,7 +98,7 @@ parser.add_argument("--traj_mode", type=str, default="opponent", help="Follow op
 
 args = parser.parse_args()
 
-if args.use_sde == False and args.freq > 1:
+if not args.use_sde and args.freq > 1:
     raise ValueError("Cannot have sampling freq > 1 without sde")
 
 TENSORBOARD_LOG = (
@@ -268,13 +274,34 @@ if __name__ == "__main__":
         json.dump(args.__dict__, file, indent=4, default=lambda _: "<not serializable>")
 
     # Define the callbacks
-    checkpoint_callback = CheckpointCallback(
+    callbacks = []
+    callbacks.append(CheckpointCallback(
         save_freq=max(args.save_every // args.num_envs, 1),
         save_path=TENSORBOARD_LOG,
         save_vecnormalize=True,
         verbose=1,
-    )
-    tensorboard_callback = TensorboardCallback(args.env_name, info_keywords=ENV_INFO[args.env_name])
+    ))
+    callbacks.append(TensorboardCallback(args.env_name, info_keywords=ENV_INFO[args.env_name]))
+
+    wandb_run = None
+    if args.track:
+        import wandb
+        from wandb.integration.sb3 import WandbCallback
+
+        wandb_run = wandb.init(
+            id=wandb.util.generate_id(),
+            project=args.wandb_project,
+            group=args.wandb_group,
+            name=args.env_name,
+            sync_tensorboard=True,
+            config={
+                "model_config": model_config,
+                "env_config": env_config,
+            },
+            allow_val_change=True,
+            save_code=True,
+        )
+        callbacks.append(WandbCallback(verbose=2))
 
     # Create the environment
     envs = create_vec_env(env_config, 
@@ -294,10 +321,13 @@ if __name__ == "__main__":
         load_model_path=model_path,
         log_dir=TENSORBOARD_LOG,
         model_config=model_config,
-        callbacks=[checkpoint_callback, tensorboard_callback],
+        callbacks=callbacks,
         timesteps=args.num_steps,
     )
 
     # Train agent
     trainer.train()
     trainer.save()
+
+    if wandb_run is not None:
+        wandb_run.finish()
