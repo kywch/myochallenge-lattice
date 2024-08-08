@@ -25,8 +25,8 @@ parser.add_argument("--log_std_init", type=float, default=0.0, help="Initial log
 
 parser.add_argument("--env_name",type=str,default="MyoElbowPoseRandom", help="Name of the environment",)
 
-parser.add_argument("--track", default=False, help="Track on WandB")
-#parser.add_argument("--track", action="store_true", help="Track on WandB")
+#parser.add_argument("--track", default=False, help="Track on WandB")
+parser.add_argument("--track", action="store_true", help="Track on WandB")
 parser.add_argument("--wandb_project", type=str, default="myo-lattice", help="WandB project name")
 parser.add_argument("--wandb_group", type=str, default=None, help="WandB project group")
 
