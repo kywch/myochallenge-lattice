@@ -1,5 +1,5 @@
 import numpy as np
-from myosuite.envs.myo.pose_v0 import PoseEnvV0
+from myosuite.envs.myo.myobase.pose_v0 import PoseEnvV0
 from envs.env_mixins import DictObsMixin, ObsEmbeddingMixin
 from definitions import ACT_KEY, GOAL_KEY
 
@@ -69,7 +69,7 @@ class MusclePoseEnv(PoseEnvV0, DictObsMixin, ObsEmbeddingMixin):
         return obs_dict
 
     def get_obs_elements(self):
-        actuators = list(self.sim.model.actuator_names)
+        actuators = [self.sim.model.actuator(act_id).name for act_id in range(1, self.sim.model.na)]
         objects = []
-        goals = list(self.sim.model.joint_names)
+        goals = [self.sim.model.joint(jnt_id).name for jnt_id in range(1, self.sim.model.njnt)]
         return [*actuators, *objects, *goals]

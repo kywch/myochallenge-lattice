@@ -6,6 +6,12 @@ OBJ_KEY = "object_obs"
 GOAL_KEY = "goal_obs"
 POSITIONS_KEY = "positions"
 
+BASE_INFO_KEYS = {
+    "done",
+    "solved",
+    "rwd_sparse",
+}
+
 POSE_INFO_KEYS = {
     "pose",
     "bonus",
@@ -104,6 +110,8 @@ RELOCATE_INFO_KEYS = {
 ISAAC_REACH_INFO_KEYS = {}
 
 ENV_INFO = {
+    "MyoElbowPoseFixed": BASE_INFO_KEYS,
+    "MyoElbowPoseRandom": BASE_INFO_KEYS,
     "MuscleElbowPoseFixed": POSE_INFO_KEYS,
     "MuscleElbowPoseRandom": POSE_INFO_KEYS,
     "MuscleFingerPoseFixed": POSE_INFO_KEYS,
