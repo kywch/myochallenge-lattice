@@ -5,6 +5,8 @@ import torch.nn as nn
 import json
 import numpy as np
 import glob
+from datetime import datetime
+
 from definitions import ROOT_DIR, ENV_INFO
 from metrics.custom_callbacks import TensorboardCallback
 from train.trainer import SingleEnvTrainer
@@ -23,8 +25,8 @@ parser.add_argument("--log_std_init", type=float, default=0.0, help="Initial log
 
 parser.add_argument("--env_name",type=str,default="MyoElbowPoseRandom", help="Name of the environment",)
 
-#parser.add_argument("--track", default=False, help="Track on WandB")
-parser.add_argument("--track", action="store_true", help="Track on WandB")
+parser.add_argument("--track", default=False, help="Track on WandB")
+#parser.add_argument("--track", action="store_true", help="Track on WandB")
 parser.add_argument("--wandb_project", type=str, default="myo-lattice", help="WandB project name")
 parser.add_argument("--wandb_group", type=str, default=None, help="WandB project group")
 
@@ -101,16 +103,23 @@ args = parser.parse_args()
 if not args.use_sde and args.freq > 1:
     raise ValueError("Cannot have sampling freq > 1 without sde")
 
+# Simpler tensorboard log name
+formatted_date = datetime.now().strftime("%y%m%d-%H%M")
 TENSORBOARD_LOG = (
     os.path.join(ROOT_DIR, "output", "training", "ongoing",
-    (f"{args.env_name}_seed_{args.seed}_x_{args.x_min}_{args.x_max}_y_{args.y_min}_{args.y_max}"
-    f"_dist_{args.distance_weight}_hip_{args.cyclic_hip_weight}_period_{args.hip_period}"
-    f"_alive_{args.alive_weight}_solved_{args.solved_weight}_early_solved_{args.early_solved_weight}"
-    f"_joints_{args.joints_in_range_weight}_lose_{args.lose_weight}_ref_{args.ref_rot_weight}"
-    f"_heel_{args.heel_pos_weight}_gait_l_{args.gait_stride_length}_gait_c_{args.gait_cadence}"
-    f"_fix_{args.prob_fixed}_ran_{args.prob_random}_mov_{args.prob_moving}_traj_{args.traj_mode}{args.out_suffix}")
-    )
+                 f"{args.env_name}_seed_{args.seed}_{formatted_date}")
 )
+
+# TENSORBOARD_LOG = (
+#     os.path.join(ROOT_DIR, "output", "training", "ongoing",
+#     (f"{args.env_name}_seed_{args.seed}_x_{args.x_min}_{args.x_max}_y_{args.y_min}_{args.y_max}"
+#     f"_dist_{args.distance_weight}_hip_{args.cyclic_hip_weight}_period_{args.hip_period}"
+#     f"_alive_{args.alive_weight}_solved_{args.solved_weight}_early_solved_{args.early_solved_weight}"
+#     f"_joints_{args.joints_in_range_weight}_lose_{args.lose_weight}_ref_{args.ref_rot_weight}"
+#     f"_heel_{args.heel_pos_weight}_gait_l_{args.gait_stride_length}_gait_c_{args.gait_cadence}"
+#     f"_fix_{args.prob_fixed}_ran_{args.prob_random}_mov_{args.prob_moving}_traj_{args.traj_mode}{args.out_suffix}")
+#     )
+# )
 if os.path.isdir(TENSORBOARD_LOG):
     # The folder already exists, then we resume the training if there are already checkpoints
     load_path = TENSORBOARD_LOG

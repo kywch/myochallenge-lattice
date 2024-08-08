@@ -4,6 +4,8 @@ import json
 import numpy as np
 import pandas as pd
 import glob
+import time
+
 from definitions import ROOT_DIR
 from envs.environment_factory import EnvironmentFactory
 from sb3_contrib import RecurrentPPO
@@ -215,6 +217,7 @@ def main(args):
         lstm_states = None
         cum_rew = 0
         step = 0
+        solved_step = -1
         obs = env.reset()
         episode_starts = np.ones((1,), dtype=bool)
         done = False
@@ -286,7 +289,14 @@ def main(args):
             episode_starts = done
             cum_rew += rewards
             step += 1
-        print("Episode", i, ", len:", step, ", cum rew: ", cum_rew)
+            # NOTE: this is a hack
+            if rewards > 7 and solved_step < 0:
+                solved_step = step
+
+            # print("Episode", i, ", len:", step, ", rew: ", rewards)
+
+        print("Episode", i, ", len:", step, ", cum rew: ", cum_rew, ", solved_step: ", solved_step)
+        time.sleep(1)
         
     env.close()
     
